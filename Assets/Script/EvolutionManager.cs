@@ -12,9 +12,6 @@ public sealed class EvolutionManager : MonoBehaviour
     [SerializeField] private Transform spawnPoint;
     [SerializeField] private Transform goal;
 
-    [Header("Cenarios de Validacao")]
-    [SerializeField] private Transform[] validationGoals = new Transform[3];
-
     [Header("NavMesh")]
     [SerializeField, Min(0.1f)] private float navMeshSampleDistance = 3f;
     [SerializeField] private bool drawReferencePath = true;
@@ -46,31 +43,12 @@ public sealed class EvolutionManager : MonoBehaviour
     private int finishedCount;
 
     private bool testMode;
-    private bool validationMode;
 
     private Genome testGenome;
     private Genome bestGenome;
 
-    private int validationIndex;
-    private float[] validationWeights;
-    private readonly float[] validationDistances = new float[3];
-
-    private readonly List<ValidationResult> validationResults = new();
-
-    private class ValidationResult
-    {
-        public string Scenario;
-        public bool ReachedGoal;
-        public bool Collided;
-        public float Time;
-        public float Distance;
-        public float Efficiency;
-    }
-
     public int Generation { get; private set; }
-
     public float BestFitness { get; private set; }
-
     public float AverageFitness { get; private set; }
 
     public float ProgressWeight => progressWeight;
@@ -84,7 +62,6 @@ public sealed class EvolutionManager : MonoBehaviour
     public int Seed => randomSeed;
 
     public bool IsTestingSavedGenome => testMode;
-    public bool IsValidating => validationMode;
 
     public float ReferenceDistance { get; private set; }
     public bool HasReferencePath { get; private set; }
@@ -115,8 +92,13 @@ public sealed class EvolutionManager : MonoBehaviour
         BeginGeneration();
 
         Debug.Log(
-            $"[Evolution] Treino iniciado. Seed: {randomSeed} | População: {populationSize}"
+            $"[Evolution] Treino iniciado. Seed: {randomSeed} | Popula��o: {populationSize}"
         );
+    }
+
+    private void Update()
+    {
+        Time.timeScale = Mathf.Max(0.01f, simulationSpeed);
     }
 
     private void CalculateTrainingPath()
@@ -133,7 +115,7 @@ public sealed class EvolutionManager : MonoBehaviour
             out float distance))
         {
             Debug.LogError(
-                "[NavMesh] Não foi possível calcular a rota do cenário de treino."
+                "[NavMesh] N�o foi poss�vel calcular a rota do cen�rio de treino."
             );
 
             return;
@@ -203,10 +185,7 @@ public sealed class EvolutionManager : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (ships.Count == 0)
-            return;
-
-        if (!HasActiveShips())
+        if (ships.Count == 0 || !HasActiveShips())
             return;
 
         elapsed += Time.fixedDeltaTime * simulationSpeed;
@@ -234,7 +213,6 @@ public sealed class EvolutionManager : MonoBehaviour
 
     private void BeginGeneration()
     {
-        validationMode = false;
         testMode = false;
         testGenome = null;
 
@@ -274,12 +252,6 @@ public sealed class EvolutionManager : MonoBehaviour
 
     public void ReportFinished(EvolvingShip ship)
     {
-        if (validationMode)
-        {
-            OnValidationShipFinished(ship);
-            return;
-        }
-
         if (testMode)
         {
             if (AllShipsFinished())
@@ -287,7 +259,7 @@ public sealed class EvolutionManager : MonoBehaviour
                 PrintEpisodeReport("TESTE DO GENOMA SALVO");
 
                 Debug.Log(
-                    "[Evolution] Teste concluído. A evolução não foi executada."
+                    "[Evolution] Teste conclu�do. A evolu��o n�o foi executada."
                 );
             }
 
@@ -336,7 +308,7 @@ public sealed class EvolutionManager : MonoBehaviour
         if (bestGenome == null || BestFitness > bestGenome.Fitness)
             bestGenome = population[0].Clone();
 
-        PrintEpisodeReport($"GERAÇÃO {Generation}");
+        PrintEpisodeReport($"GERA��O {Generation}");
 
         List<Genome> next = new List<Genome>(populationSize);
 
@@ -394,7 +366,7 @@ public sealed class EvolutionManager : MonoBehaviour
     }
 
     // =========================================================
-    // RELATORIO DO TREINO
+    // RELATORIO
     // =========================================================
 
     private void PrintEpisodeReport(string title)
@@ -437,14 +409,14 @@ public sealed class EvolutionManager : MonoBehaviour
 
         report.AppendLine("");
         report.AppendLine("==============================================");
-        report.AppendLine($"          RELATÓRIO - {title}");
+        report.AppendLine($"          RELAT�RIO - {title}");
         report.AppendLine("==============================================");
 
-        report.AppendLine("                 MÉDIAS GERAIS");
+        report.AppendLine("                 M�DIAS GERAIS");
         report.AppendLine("----------------------------------------------");
 
         report.AppendLine($"Seed: {randomSeed}");
-        report.AppendLine($"Geração: {Generation}");
+        report.AppendLine($"Gera��o: {Generation}");
         report.AppendLine($"Ships: {populationSize}");
 
         report.AppendLine(
@@ -456,26 +428,26 @@ public sealed class EvolutionManager : MonoBehaviour
         );
 
         report.AppendLine(
-            $"Tempo médio: {totalTime / populationSize:F2}s"
+            $"Tempo m�dio: {totalTime / populationSize:F2}s"
         );
 
         report.AppendLine(
-            $"Distância real média: {totalDistance / populationSize:F2}m"
+            $"Dist�ncia real m�dia: {totalDistance / populationSize:F2}m"
         );
 
         report.AppendLine(
-            $"Distância de referência: " +
-            (HasReferencePath ? $"{ReferenceDistance:F2}m" : "INDISPONÍVEL")
+            $"Dist�ncia de refer�ncia: " +
+            (HasReferencePath ? $"{ReferenceDistance:F2}m" : "INDISPON�VEL")
         );
 
         report.AppendLine(
             validEfficiencyCount > 0
-                ? $"Eficiência média: {totalEfficiency / validEfficiencyCount:P2}"
-                : "Eficiência média: INDISPONÍVEL"
+                ? $"Efici�ncia m�dia: {totalEfficiency / validEfficiencyCount:P2}"
+                : "Efici�ncia m�dia: INDISPON�VEL"
         );
 
         report.AppendLine(
-            $"Fitness médio: {totalFitness / populationSize:F2}"
+            $"Fitness m�dio: {totalFitness / populationSize:F2}"
         );
 
         report.AppendLine($"Melhor fitness: {BestFitness:F2}");
@@ -488,7 +460,7 @@ public sealed class EvolutionManager : MonoBehaviour
         {
             EvolvingShip ship = ships[i];
 
-            string efficiency = "INVÁLIDA";
+            string efficiency = "INV�LIDA";
 
             if (ship.ReachedGoal &&
                 ship.RealDistance > 0f &&
@@ -503,8 +475,8 @@ public sealed class EvolutionManager : MonoBehaviour
                 $"Chegou: {ship.ReachedGoal} | " +
                 $"Colidiu: {ship.Collided} | " +
                 $"Tempo: {ship.EpisodeTime:F2}s | " +
-                $"Distância: {ship.RealDistance:F2}m | " +
-                $"Eficiência: {efficiency} | " +
+                $"Dist�ncia: {ship.RealDistance:F2}m | " +
+                $"Efici�ncia: {efficiency} | " +
                 $"Fitness: {ship.Fitness:F2}"
             );
         }
@@ -515,275 +487,7 @@ public sealed class EvolutionManager : MonoBehaviour
     }
 
     // =========================================================
-    // VALIDACAO DOS TRES CENARIOS
-    // =========================================================
-
-    public void StartThreeScenarioValidation()
-    {
-        if (validationMode)
-        {
-            Debug.LogWarning("[Validation] A validação já está em andamento.");
-            return;
-        }
-
-        if (bestGenome == null)
-        {
-            Debug.LogError(
-                "[Validation] Ainda não existe um melhor genoma de uma geração concluída. " +
-                "Deixe a evolução terminar pelo menos uma geração."
-            );
-
-            return;
-        }
-
-        if (validationGoals == null || validationGoals.Length != 3)
-        {
-            Debug.LogError(
-                "[Validation] Configure exatamente três Goals no Inspector."
-            );
-
-            return;
-        }
-
-        for (int i = 0; i < 3; i++)
-        {
-            if (validationGoals[i] == null)
-            {
-                Debug.LogError(
-                    $"[Validation] Goal do cenário {i + 1} não foi configurado."
-                );
-
-                return;
-            }
-
-            if (!TryCalculatePath(
-                spawnPoint.position,
-                validationGoals[i].position,
-                out NavMeshPath path,
-                out float distance))
-            {
-                Debug.LogError(
-                    $"[Validation] Cenário {i + 1} não possui rota completa na NavMesh. " +
-                    "Validação cancelada."
-                );
-
-                return;
-            }
-
-            validationDistances[i] = distance;
-        }
-
-        // Copia os pesos uma única vez.
-        // Todos os cenários usarão exatamente este mesmo genoma.
-        validationWeights = (float[])bestGenome.Weights.Clone();
-
-        validationResults.Clear();
-
-        validationIndex = 0;
-        validationMode = true;
-        testMode = false;
-
-        elapsed = 0f;
-
-        // Garante que existe pelo menos um Ship.
-        if (ships.Count == 0)
-        {
-            ships.Add(
-                Instantiate(
-                    shipPrefab,
-                    spawnPoint.position,
-                    spawnPoint.rotation,
-                    transform
-                )
-            );
-        }
-
-        // Desativa todos os Ships, exceto o primeiro.
-        for (int i = 1; i < ships.Count; i++)
-            ships[i].gameObject.SetActive(false);
-
-        Debug.Log(
-            "[Validation] Iniciando validação com o melhor genoma da geração " +
-            Generation + "."
-        );
-
-        BeginValidationScenario();
-    }
-
-    private void BeginValidationScenario()
-    {
-        if (!validationMode || validationIndex >= 3)
-            return;
-
-        EvolvingShip ship = ships[0];
-
-        Transform scenarioGoal = validationGoals[validationIndex];
-
-        ReferenceDistance = validationDistances[validationIndex];
-        HasReferencePath = ReferenceDistance > 0f;
-
-        elapsed = 0f;
-
-        Genome validationGenome = new Genome(
-            NeuralNetwork.WeightCount,
-            random
-        );
-
-        Array.Copy(
-            validationWeights,
-            validationGenome.Weights,
-            validationWeights.Length
-        );
-
-        ship.gameObject.SetActive(true);
-
-        ship.Begin(
-            this,
-            validationGenome,
-            scenarioGoal,
-            spawnPoint.position,
-            spawnPoint.rotation
-        );
-
-        Debug.Log(
-            $"[Validation] Cenário {validationIndex + 1}/3 iniciado. " +
-            $"Distância de referência: {ReferenceDistance:F2}m"
-        );
-    }
-
-    private void OnValidationShipFinished(EvolvingShip ship)
-    {
-        ValidationResult result = new ValidationResult();
-
-        result.Scenario = $"Cenário {validationIndex + 1}";
-
-        result.ReachedGoal = ship.ReachedGoal;
-        result.Collided = ship.Collided;
-        result.Time = ship.EpisodeTime;
-        result.Distance = ship.RealDistance;
-        result.Efficiency = ship.Efficiency;
-
-        validationResults.Add(result);
-
-        validationIndex++;
-
-        if (validationIndex < 3)
-        {
-            BeginValidationScenario();
-        }
-        else
-        {
-            FinishThreeScenarioValidation();
-        }
-    }
-
-    private void FinishThreeScenarioValidation()
-    {
-        validationMode = false;
-
-        PrintValidationTable();
-
-        ships[0].gameObject.SetActive(false);
-
-        validationWeights = null;
-    }
-
-    private void PrintValidationTable()
-    {
-        StringBuilder report = new StringBuilder();
-
-        int successfulScenarios = 0;
-
-        report.AppendLine("");
-        report.AppendLine("==============================================================");
-        report.AppendLine("             RESULTADO DA VALIDACAO");
-        report.AppendLine("==============================================================");
-
-        report.AppendLine(
-            $"Genoma utilizado: Melhor genoma da geração {Generation}"
-        );
-
-        report.AppendLine(
-            $"Fitness do melhor genoma: {bestGenome.Fitness:F2}"
-        );
-
-        report.AppendLine(
-            $"Seed do treinamento: {randomSeed}"
-        );
-
-        report.AppendLine("");
-
-        report.AppendLine(
-            "CENARIO | CHEGOU | COLISAO | TEMPO | DISTANCIA | EFICIENCIA"
-        );
-
-        report.AppendLine(
-            "--------------------------------------------------------------"
-        );
-
-        for (int i = 0; i < validationResults.Count; i++)
-        {
-            ValidationResult result = validationResults[i];
-
-            bool success =
-                result.ReachedGoal && !result.Collided;
-
-            if (success)
-                successfulScenarios++;
-
-            string efficiency =
-                result.Efficiency >= 0f
-                    ? result.Efficiency.ToString("P2")
-                    : "INVALIDA";
-
-            report.AppendLine(
-                $"{result.Scenario,-9} | " +
-                $"{(result.ReachedGoal ? "SIM" : "NAO"),-6} | " +
-                $"{(result.Collided ? "SIM" : "NAO"),-7} | " +
-                $"{result.Time,5:F2}s | " +
-                $"{result.Distance,8:F2}m | " +
-                $"{efficiency}"
-            );
-        }
-
-        report.AppendLine(
-            "--------------------------------------------------------------"
-        );
-
-        report.AppendLine(
-            $"Cenários concluídos sem colisão: {successfulScenarios}/3"
-        );
-
-        report.AppendLine("");
-
-        if (successfulScenarios >= 2)
-        {
-            report.AppendLine(
-                "RESULTADO FINAL: APROVADO"
-            );
-
-            report.AppendLine(
-                "O melhor genoma alcançou o alvo sem colisão em pelo menos 2 dos 3 cenários."
-            );
-        }
-        else
-        {
-            report.AppendLine(
-                "RESULTADO FINAL: REPROVADO"
-            );
-
-            report.AppendLine(
-                "O melhor genoma não alcançou o alvo sem colisão em pelo menos 2 dos 3 cenários."
-            );
-        }
-
-        report.AppendLine("==============================================================");
-
-        Debug.Log(report.ToString());
-    }
-
-    // =========================================================
-    // SALVAR E TESTAR GENOMA
+    // GENOMA SALVO
     // =========================================================
 
     public float[] GetBestWeights()
@@ -817,11 +521,9 @@ public sealed class EvolutionManager : MonoBehaviour
         if (weights == null ||
             weights.Length != NeuralNetwork.WeightCount)
         {
-            Debug.LogError("[Evolution] Genoma incompatível.");
+            Debug.LogError("[Evolution] Genoma incompat�vel.");
             return;
         }
-
-        validationMode = false;
 
         testGenome = new Genome(
             NeuralNetwork.WeightCount,
@@ -851,19 +553,6 @@ public sealed class EvolutionManager : MonoBehaviour
             );
         }
 
-        ReferenceDistance = 0f;
-        HasReferencePath = false;
-
-        if (TryCalculatePath(
-            spawnPoint.position,
-            goal.position,
-            out NavMeshPath path,
-            out float distance))
-        {
-            ReferenceDistance = distance;
-            HasReferencePath = true;
-        }
-
         for (int i = 0; i < populationSize; i++)
         {
             ships[i].gameObject.SetActive(true);
@@ -887,15 +576,13 @@ public sealed class EvolutionManager : MonoBehaviour
 
     public void ResumeEvolution()
     {
-        if (!testMode && !validationMode)
+        if (!testMode)
             return;
 
         testMode = false;
-        validationMode = false;
         testGenome = null;
-        validationWeights = null;
 
-        Debug.Log("[Evolution] Retomando evolução.");
+        Debug.Log("[Evolution] Retomando evolu��o.");
 
         BeginGeneration();
     }
@@ -937,22 +624,6 @@ public sealed class EvolutionManager : MonoBehaviour
                 referenceCorners[i],
                 0.12f
             );
-        }
-
-        if (validationGoals != null)
-        {
-            Gizmos.color = Color.yellow;
-
-            for (int i = 0; i < validationGoals.Length; i++)
-            {
-                if (validationGoals[i] != null)
-                {
-                    Gizmos.DrawWireSphere(
-                        validationGoals[i].position,
-                        0.5f
-                    );
-                }
-            }
         }
     }
 }

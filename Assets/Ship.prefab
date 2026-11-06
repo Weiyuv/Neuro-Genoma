@@ -153,10 +153,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4fec347b042641140869f8d30586002f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EvolvingShip
-  sensorDistance: 30
-  sensorAngle: 25
+  maxSpeed: 10
+  minimumThrottle: 0.3
+  turnSpeed: 360
+  acceleration: 8
+  routeAssist: 0.35
+  obstacleAvoidanceAssist: 0.6
+  cornerReachDistance: 1.2
+  goalReachDistance: 1.5
+  navMeshSampleDistance: 5
   obstacleMask:
     serializedVersion: 2
     m_Bits: 8
-  maxSpeed: 25
-  turnSpeed: 180
+  sensorDistance: 30
+  sensorHeight: 0.5
+  sensorAngle: 25
