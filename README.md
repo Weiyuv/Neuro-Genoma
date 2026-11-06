@@ -1,3 +1,18 @@
+## EvolutionManager
+
+Population Size  250
+Elite Count  50 
+Mutation Rate  1
+Mutation Strength  0.25
+Episode Seconds 30
+Random Seed  0
+Simulation Speed  3 
+Progress Weight 10
+Goal Bonus  100
+Collision Penalty  -50
+Time Penalty  1
+
+
 ## Análise dos resultados
 
 **1. O melhor fitness correspondeu à rota mais eficiente?**
