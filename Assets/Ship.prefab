@@ -158,5 +158,5 @@ MonoBehaviour:
   obstacleMask:
     serializedVersion: 2
     m_Bits: 8
-  maxSpeed: 50
+  maxSpeed: 25
   turnSpeed: 180

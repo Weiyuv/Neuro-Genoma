@@ -1,3 +1,4 @@
+
 using System;
 
 [Serializable]
@@ -9,6 +10,7 @@ public sealed class Genome
     public Genome(int weightCount, Random random, float initialRange = 1f)
     {
         Weights = new float[weightCount];
+
         for (int i = 0; i < Weights.Length; i++)
             Weights[i] = RandomRange(random, -initialRange, initialRange);
     }
@@ -22,14 +24,18 @@ public sealed class Genome
     {
         float[] copy = new float[Weights.Length];
         Array.Copy(Weights, copy, Weights.Length);
+
         return new Genome(copy) { Fitness = Fitness };
     }
 
     public static Genome Crossover(Genome first, Genome second, Random random)
     {
         float[] child = new float[first.Weights.Length];
+
         for (int i = 0; i < child.Length; i++)
-            child[i] = random.NextDouble() < 0.5 ? first.Weights[i] : second.Weights[i];
+            child[i] = random.NextDouble() < 0.5
+                ? first.Weights[i]
+                : second.Weights[i];
 
         return new Genome(child);
     }
